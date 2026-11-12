@@ -29,7 +29,7 @@ def show_all_pokemons(request):
         pokemons_on_page.append({
             'pokemon_id': pokemon.id,
             'img_url': img_url,
-            'title_ru': pokemon.title,
+            'title_ru': pokemon.title_ru,
         })
 
     return render(request, 'mainpage.html', context={
@@ -55,7 +55,10 @@ def show_pokemon(request, pokemon_id):
 
     requested_pokemon = {
         'img_url': img_url,
-        'title_ru': pokemon.title,
+        'title_ru': pokemon.title_ru,
+        'title_en': pokemon.title_en,
+        'title_jp': pokemon.title_jp,
+        'description': pokemon.description,
         'entities': pokemon_markers,
     }
 
