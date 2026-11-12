@@ -4,6 +4,7 @@ from django.http import HttpResponseNotFound
 from django.shortcuts import render
 from pokemon_entities.models import Pokemon, PokemonEntity
 from django.utils import timezone
+from django.shortcuts import render, get_object_or_404
 
 
 MOSCOW_CENTER = [55.751244, 37.618423]
@@ -13,10 +14,7 @@ def show_all_pokemons(request):
     current_time = timezone.now()
     pokemon_markers = []
     for pokemon in Pokemon.objects.all():
-        if pokemon.photo:
-            img_url = request.build_absolute_uri(pokemon.photo.url)
-        else:
-            img_url = None
+        img_url = request.build_absolute_uri(pokemon.photo.url) if pokemon.photo else None
         active_pokemons = PokemonEntity.objects.filter(pokemon=pokemon).exclude(appeared_at__gte=current_time).exclude(disappeared_at__lte=current_time)
         for pokemon_entity in active_pokemons:
             pokemon_markers.append({
@@ -27,10 +25,7 @@ def show_all_pokemons(request):
 
     pokemons_on_page = []
     for pokemon in Pokemon.objects.all():
-        if pokemon.photo:
-            img_url = request.build_absolute_uri(pokemon.photo.url)
-        else:
-            img_url = None
+        img_url = request.build_absolute_uri(pokemon.photo.url) if pokemon.photo else None
         pokemons_on_page.append({
             'pokemon_id': pokemon.id,
             'img_url': img_url,
@@ -45,15 +40,24 @@ def show_all_pokemons(request):
 
 
 def show_pokemon(request, pokemon_id):
-    with open('pokemon_entities/pokemons.json', encoding='utf-8') as database:
-        pokemons = json.load(database)['pokemons']
+    pokemon = get_object_or_404(Pokemon, id=pokemon_id)
+    img_url = request.build_absolute_uri(pokemon.photo.url) if pokemon.photo else None
 
-    for pokemon in pokemons:
-        if pokemon['pokemon_id'] == int(pokemon_id):
-            requested_pokemon = pokemon
-            break
-    else:
-        return HttpResponseNotFound('<h1>Такой покемон не найден</h1>')
+    current_time = timezone.now()
+    pokemon_markers = []
+    active_pokemons = PokemonEntity.objects.filter(pokemon=pokemon).exclude(appeared_at__gte=current_time).exclude(disappeared_at__lte=current_time)
+    for pokemon_entity in active_pokemons:
+        pokemon_markers.append({
+            "lat": pokemon_entity.lat,
+            "lon": pokemon_entity.lon,
+            "image_url": img_url,
+        })
+
+    requested_pokemon = {
+        'img_url': img_url,
+        'title_ru': pokemon.title,
+        'entities': pokemon_markers,
+    }
 
     return render(request, 'pokemon.html', context={
         'pokemon': requested_pokemon,
